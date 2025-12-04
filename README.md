@@ -21,7 +21,7 @@ A WhatsApp MCP server for Claude Code. Message yourself via WhatsApp to interact
 Run this single command to add claude-ping to Claude Code:
 
 ```bash
-claude mcp add claude-ping -- npx -y github:YOUR_USERNAME/claude-ping
+claude mcp add claude-ping -- npx -y github:conbon/claude-ping
 ```
 
 That's it! The MCP server will be downloaded and run automatically when Claude Code starts.
@@ -32,7 +32,7 @@ If you prefer to clone and build locally:
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/claude-ping.git
+git clone https://github.com/conbon/claude-ping.git
 cd claude-ping
 
 # Install dependencies
@@ -54,7 +54,7 @@ You can also manually add to `~/.claude.json`:
   "mcpServers": {
     "claude-ping": {
       "command": "npx",
-      "args": ["-y", "github:YOUR_USERNAME/claude-ping"]
+      "args": ["-y", "github:conbon/claude-ping"]
     }
   }
 }
