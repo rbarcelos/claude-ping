@@ -80,6 +80,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: [],
         },
       },
+      {
+        name: 'whatsapp_request_permission',
+        description:
+          'Request permission approval via WhatsApp. Sends a permission request and waits for yes/no response. Used by hooks to relay Claude Code permission requests.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            tool_name: {
+              type: 'string',
+              description: 'The name of the tool requesting permission (e.g., "Bash", "Write")',
+            },
+            details: {
+              type: 'string',
+              description: 'Details about what the tool wants to do',
+            },
+            timeout_seconds: {
+              type: 'number',
+              description: 'How long to wait for a response (default: 60 seconds)',
+            },
+          },
+          required: ['tool_name', 'details'],
+        },
+      },
     ],
   };
 });
@@ -192,6 +215,39 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const msg = error instanceof Error ? error.message : 'Unknown error';
         return {
           content: [{ type: 'text', text: `Logout failed: ${msg}` }],
+          isError: true,
+        };
+      }
+    }
+
+    case 'whatsapp_request_permission': {
+      const toolName = (args as { tool_name?: string })?.tool_name;
+      const details = (args as { details?: string })?.details;
+      const timeoutSeconds = (args as { timeout_seconds?: number })?.timeout_seconds ?? 60;
+
+      if (!toolName || !details) {
+        return {
+          content: [{ type: 'text', text: 'Error: tool_name and details are required' }],
+          isError: true,
+        };
+      }
+
+      try {
+        const permId = await whatsapp.requestPermission(toolName, details);
+        const approved = await whatsapp.waitForPermission(permId, timeoutSeconds * 1000);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ approved, permission_id: permId }),
+            },
+          ],
+        };
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Unknown error';
+        return {
+          content: [{ type: 'text', text: `Permission request failed: ${msg}` }],
           isError: true,
         };
       }

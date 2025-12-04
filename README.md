@@ -122,6 +122,68 @@ Claude Code ←→ MCP Server ←→ WhatsApp Web ←→ Your Phone
 - **Session storage** - WhatsApp credentials are stored in `~/.claude-ping/`
 - **No external services** - Direct connection to WhatsApp, no intermediary servers
 
+## Remote Permission Approval (Experimental)
+
+You can approve Claude Code's permission requests from your phone! When enabled, permission prompts are sent to WhatsApp instead of the terminal.
+
+### Prerequisites
+
+1. Claude Code must be running with the claude-ping MCP server configured
+2. You must be logged into WhatsApp (run `whatsapp_login` first)
+
+### Setup
+
+```bash
+# After installing claude-ping, run:
+npm run setup-hooks
+# or
+npx claude-ping-setup
+```
+
+This configures Claude Code to intercept permission requests and relay them to WhatsApp.
+
+### How It Works
+
+1. Claude Code requests permission for a tool (e.g., Bash, Write, Edit)
+2. A WhatsApp message is sent with the permission details
+3. Reply to approve or deny
+4. Claude Code proceeds based on your response
+
+If you don't respond within 2 minutes, it falls back to the terminal prompt.
+
+### Accepted Responses
+
+| To Approve | To Deny |
+|------------|---------|
+| `yes`      | `no`    |
+| `y`        | `n`     |
+| `approve`  | `deny`  |
+
+Responses are case-insensitive.
+
+### Example
+
+When Claude tries to run a bash command, you'll receive:
+
+```
+🔐 Permission Request
+
+Tool: `Bash`
+Claude needs permission to run: npm test
+
+Reply *yes* to approve or *no* to deny.
+```
+
+Simply reply `yes` or `no` to continue.
+
+### Remove Hooks
+
+```bash
+npm run remove-hooks
+# or
+npx claude-ping-setup remove
+```
+
 ## Development
 
 ```bash
@@ -132,13 +194,13 @@ npm run dev
 npm run build
 ```
 
-## Legacy Standalone Mode
+## Standalone Mode
 
-There's also a legacy standalone bridge (not MCP) that runs independently:
+There's also a standalone bridge (not MCP) that runs independently:
 
 ```bash
-# Start the legacy bridge
-npm run start:legacy
+# Start the standalone bridge
+npm run start:standalone
 ```
 
 This mode:
@@ -153,16 +215,19 @@ src/
 ├── mcp/
 │   ├── server.ts          # MCP server entry point
 │   └── whatsapp-service.ts # WhatsApp client wrapper
-├── index.ts               # Legacy standalone entry point
+├── index.ts               # Standalone entry point
 ├── whatsapp/
-│   ├── client.ts          # WhatsApp Web.js wrapper (legacy)
+│   ├── client.ts          # WhatsApp Web.js wrapper (standalone)
 │   └── browser.ts         # Browser download management
 ├── claude/
-│   └── process.ts         # Claude Code CLI integration (legacy)
+│   └── process.ts         # Claude Code CLI integration (standalone)
 ├── messages/
-│   └── commands.ts        # Command parsing (legacy)
+│   └── commands.ts        # Command parsing (standalone)
+├── hooks/
+│   ├── permission-hook.ts # Hook script for WhatsApp permission approval
+│   └── setup.ts           # Setup script for configuring hooks
 └── session/
-    └── store.ts           # Session persistence (legacy)
+    └── store.ts           # Session persistence (standalone)
 ```
 
 ## License
