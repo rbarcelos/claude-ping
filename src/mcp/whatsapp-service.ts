@@ -48,6 +48,7 @@ export class WhatsAppService {
   private permissionResponses: Map<string, boolean> = new Map();
   private queueDir: string;
   private queueWatcher: ReturnType<typeof watch> | null = null;
+  private sentMessages: Set<string> = new Set();
   private hookPermissionMap: Map<string, string> = new Map(); // hookRequestId -> permId
 
   constructor() {
@@ -185,8 +186,8 @@ export class WhatsAppService {
       this.client = null;
     });
 
-    // Only queue messages from self
-    this.client.on('message', async (message: Message) => {
+    // Listen for all messages (including self-sent from phone)
+    this.client.on('message_create', async (message: Message) => {
       if (message.isStatus || message.from.includes('@g.us')) {
         return;
       }
@@ -195,6 +196,12 @@ export class WhatsAppService {
 
       // Only accept messages from myself
       if (this.phoneNumber && senderNumber === this.phoneNumber) {
+        // Skip messages sent by this client (Claude)
+        if (this.sentMessages.has(message.body)) {
+          this.sentMessages.delete(message.body);
+          return;
+        }
+
         const body = message.body.trim().toLowerCase();
 
         // Check if this is a permission response
@@ -286,6 +293,7 @@ export class WhatsAppService {
     }
 
     const chatId = `${this.phoneNumber}@c.us`;
+    this.sentMessages.add(message);
     await this.client.sendMessage(chatId, message);
   }
 
@@ -327,7 +335,7 @@ export class WhatsAppService {
 
     this.pendingPermissions.set(permId, request);
 
-    // Send permission request to WhatsApp
+    // Send permission request to WhatsApp (track to avoid echo)
     const chatId = `${this.phoneNumber}@c.us`;
     const msg = `🔐 *Permission Request*
 
@@ -336,6 +344,7 @@ ${details}
 
 Reply *yes* to approve or *no* to deny.`;
 
+    this.sentMessages.add(msg);
     await this.client.sendMessage(chatId, msg);
 
     return permId;
